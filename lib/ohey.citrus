@@ -1,0 +1,63 @@
+
+grammar OHEY
+
+  rule query
+    (select fields:idlist from sources:idlist where) <Query>
+  end
+
+  rule additive
+    (number plus term:(additive | number)) {
+      capture(:number).value + capture(:term).value
+    }
+  end
+
+  rule number
+    ([0-9]+ space) {
+      to_str.to_i
+    }
+  end
+
+  rule idlist
+    (v:id (comma v:id)*) {
+      l = []
+      captures(:v).each do |c|
+        newv = c.value.strip
+        l << newv
+      end
+      l
+    }
+  end
+
+  rule id
+    ([a-zA-Z][a-zA-Z\.0-9_]* space) {
+      to_str
+    }
+  end
+
+
+  rule plus
+    '+' space
+  end
+
+  rule comma
+    ',' space
+  end
+
+  rule select
+    "select" space
+  end
+
+  rule where
+    "where" space
+  end
+
+
+  rule from
+    "from" space
+  end
+
+  rule space
+    [ \t]*
+  end
+
+end

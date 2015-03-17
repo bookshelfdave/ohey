@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+#
+require 'readline'
+require 'json'
+require 'ohey'
+puts "Oh, hey!"
+
+file = open(ARGV[0])
+json = file.read
+parsed = JSON.parse(json)
+
+while line = Readline.readline('> ', true)
+  Query::json = parsed
+  m = OHEY.parse line
+  puts m.value
+end
