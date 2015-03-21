@@ -1,7 +1,6 @@
 require 'json'
 require 'citrus'
-
-
+require 'jsonpath'
 
 class OheyQuery
   attr_accessor :source_paths
@@ -30,21 +29,118 @@ class QueryPath
     @segments = @qpath.split(".")
   end
 
+  def search_from_root(json)
+    search(json, @segments)
+  end
 
-  def search(json)
+
+
+#1) Iterate over the source, which must be an array or a hash
+#2) Apply where clauses
+#3) Extract fields
+
+
+# general algorithm
+# 1) iterate over each segment
+# 2) if the segment exists and is scalar, continue
+# 3) if the segment exists and is an object, iterate
+#    over each value in the current object
+#    recurse
+# 4) if the segment exists and is an array, iterate
+#    over each value in the array
+#    recurse
+
+# $key is in kernel.modules
+# select $key, $object.size from kernel.modules
+
+
+  def search(json, segments)
+    results = []
     node = json
-    @segments.each do |segment|
+    segments.each_with_index do |segment, index|
+      puts "Segment #{index}:#{segment}"
       if node.has_key?(segment)
         node = node[segment]
-      else
-        return false
+      end
+      if index = (segments.length - 1)
+        results << node
       end
     end
-    return node
+    results
   end
+#  def search(json, segments)
+#    results = []
+#    node = json
+#    segments.each_with_index do |segment, index|
+#      puts "Segment #{index}:#{segment}"
+#      if node.has_key?(segment)
+#        node = node[segment]
+#      else
+#        if segment[0] == '$'
+#          case segment
+#          when "$key"
+#            return node.keys
+#          when "$object"
+#            if node is_a? Hash
+#              node.each do |v|
+#                search(node, segments.drop(index))
+#              end
+#            elsif node is_a? Array
+#              raise "Unimplemented!"
+#            else
+#              # keep iterating
+#              node
+#            end
+#          else
+#            raise "Unknown reserved word #{segment}"
+#          end
+#        else
+#          # don't return false, that might be a valid answer
+#          return nil
+#        end
+#      end
+#    end
+#    return node
+#  end
 
   def to_s
     @qpath
+  end
+end
+
+#module StarField
+#  def value
+#    puts "STARFIELD"
+#    "SOMESTARFIELD"
+#  end
+#end
+
+module FieldListWithStar
+  def value
+    captures(:sf).map do |c|
+      c.value
+    end
+  end
+end
+
+#module Field
+#  def value
+#    puts "FIELD"
+#    "FIELD"
+#  end
+#end
+
+#module Id
+#  def value
+#    puts "ID"
+#    capture(:id).value.to_str.strip
+#  end
+#end
+
+
+module Ref
+  def value
+    puts "REF"
   end
 end
 
@@ -59,38 +155,28 @@ module Query
   end
 
   def value
-    oq = OheyQuery.new(@@json)
-    prefix = captures(:source)[0]
-    puts ">>>#{capture(:fields).value}<<<"
-    capture(:fields).value.each do |c|
-      qp = QueryPath.new("#{prefix}.#{c}")
-      if qp.search(@@json)
-        oq.field_paths << qp
-      else
-        raise "#{qp} is an invalid path"
-      end
+    #oq = OheyQuery.new(@@json)
+    results = []
+    source = capture(:source)[0]
+    fields = capture(:fields).value
+    puts "SOURCE = #{source}"
+    sourcePath = JsonPath.new("$.#{source}")
+    dataToFilter = sourcePath.on(@@json)
+    #puts dataToFilter
+    # apply where clauses
+    filteredData = dataToFilter
+    # return results
+    results = []
+    fields.each do |f|
+      relativeField = "$.[*].#{f}"
+      rp = JsonPath.new(relativeField)
+      results << rp.on(filteredData)
     end
-    return oq.eval_query
+    return results.flatten
   end
 end
 
+
 Citrus.require('ohey')
-#Citrus.cache[path]
-#Citrus.load 'parser'
 
-
-# rule query
-# (select fields:idlist from sources:idlist where) {
-#
-# puts "Selecting from "
-# capture(:fields).value.each do |c|
-# puts ">>> #{c}"
-# end
-#
-# puts "Sources:"
-# capture(:sources).value.each do |s|
-# puts "Source: #{s}"
-# end
-# }
-# end
 
