@@ -6,6 +6,13 @@ class OheyTest < Minitest::Test
     assert_equal 1, 1
     # select real, total, vendor_id from cpu
     # select true from cpu where total = 8
+    # select $key from kernel.modules
+    # select $object from kernel.modules
+      # is $value the same as $object in this case?
+
+
+
+    #
     # select true from cpu where "fpu" in flags
     # select * from filesystem where $child.blocksize != 512
     #   filesystem is a hash, not a list!
@@ -27,7 +34,6 @@ class OheyTest < Minitest::Test
 #    },
 
 
-    # select $key from kernel.modules
 
     # select * from network.interfaces where $key = "gif0"
     # select $key, $object.addresses from network.interfaces where "127.0.0.1" in $object.addresses
@@ -35,6 +41,9 @@ class OheyTest < Minitest::Test
     # select $key, $object.addresses.family from network.interfaces where "127.0.0.1" in $object.addresses
     # select $value from network.settings.net.local.inflight
     # select $value from network.settings where $key =~ 'net.inet.*'
+
+
+
 
   end
 end

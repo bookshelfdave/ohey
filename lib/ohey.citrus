@@ -2,13 +2,32 @@
 grammar OHEY
 
   rule query
-    (select fields:idlist from sources:idlist where) <Query>
+    (
+      select
+          fields:idlist
+      from
+          source:idlist
+      where_clause?
+     ) <Query>
   end
 
-  rule additive
-    (number plus term:(additive | number)) {
-      capture(:number).value + capture(:term).value
-    }
+  rule where_clause
+    where predicate+
+  end
+
+  rule predicate
+    ref (equals | notequals | (">" | ">=" | "<" | "<=") space) ref
+  end
+
+  #rule reflist
+  #  (v:ref (comma v:ref)*) {
+  #    puts "REFLIST"
+  #    captures(:v).map { |x| x.value }
+  #  }
+  #end
+
+  rule ref
+    v:id { capture(:v).value }
   end
 
   rule number
@@ -19,21 +38,15 @@ grammar OHEY
 
   rule idlist
     (v:id (comma v:id)*) {
-      l = []
-      captures(:v).each do |c|
-        newv = c.value.strip
-        l << newv
-      end
-      l
+      captures(:v).map { |x| x.value }
     }
   end
 
   rule id
     ([a-zA-Z][a-zA-Z\.0-9_]* space) {
-      to_str
+      to_str.strip
     }
   end
-
 
   rule plus
     '+' space
@@ -41,6 +54,38 @@ grammar OHEY
 
   rule comma
     ',' space
+  end
+
+  rule notequals
+    '!=' space
+  end
+
+  rule equals
+    '=' space
+  end
+
+  rule bool
+    ("true" | "false") space
+  end
+
+  rule string
+    '"' (!'"')* '"' space
+  end
+
+  rule number
+    float | integer
+  end
+
+  rule float
+    (digits '.' digits space*) { to_str.to_f }
+  end
+
+  rule integer
+    (digits space*) { to_str.to_i }
+  end
+
+  rule digits
+    [0-9]+ ('_' [0-9]+)* # Numbers may contain underscores.
   end
 
   rule select
@@ -51,13 +96,12 @@ grammar OHEY
     "where" space
   end
 
-
   rule from
     "from" space
   end
 
   rule space
-    [ \t]*
+    [ \t\r\n]*
   end
 
 end

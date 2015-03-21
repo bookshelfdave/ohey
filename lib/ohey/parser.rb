@@ -60,7 +60,8 @@ module Query
 
   def value
     oq = OheyQuery.new(@@json)
-    prefix = capture(:sources).value[0]
+    prefix = captures(:source)[0]
+    puts ">>>#{capture(:fields).value}<<<"
     capture(:fields).value.each do |c|
       qp = QueryPath.new("#{prefix}.#{c}")
       if qp.search(@@json)
