@@ -1,51 +1,49 @@
 
-grammar OHEY
-
+grammar O
   rule query
     (
       select
-          fields:idlist
+         (field_list | star)
       from
-          source:idlist
+         field_list
       where_clause?
-     ) <Query>
+     ) {
+      def value
+        return "x"
+      end
+       }
   end
 
   rule where_clause
-    where predicate+
+    (where predicate+) <WhereClauseNode>
   end
 
   rule predicate
-    ref (equals | notequals | (">" | ">=" | "<" | "<=") space) ref
+    ref (equals | notequals | (">" | ">=" | "<" | "<=" | "in") space) ref
   end
 
-  #rule reflist
-  #  (v:ref (comma v:ref)*) {
-  #    puts "REFLIST"
-  #    captures(:v).map { |x| x.value }
-  #  }
-  #end
+  rule field
+    reserved_field | id
+  end
 
   rule ref
-    v:id { capture(:v).value }
+    (reserved_field | bool | id | number | string) space
   end
 
   rule number
-    ([0-9]+ space) {
-      to_str.to_i
-    }
+    ([1-9] [0-9]* | '0')
   end
 
-  rule idlist
-    (v:id (comma v:id)*) {
-      captures(:v).map { |x| x.value }
-    }
+  rule field_list
+    field (comma field)*
+  end
+
+  rule reserved_field
+    "$" id
   end
 
   rule id
-    ([a-zA-Z][a-zA-Z\.0-9_]* space) {
-      to_str.strip
-    }
+    [a-zA-Z] [a-zA-Z0-9\._]* space
   end
 
   rule plus
@@ -69,24 +67,25 @@ grammar OHEY
   end
 
   rule string
-    '"' (!'"')* '"' space
+    '"' ( '\"' | !'"' . )* '"'
   end
 
-  rule number
-    float | integer
-  end
 
-  rule float
-    (digits '.' digits space*) { to_str.to_f }
-  end
+  #rule number
+  #  float | integer
+  #end
 
-  rule integer
-    (digits space*) { to_str.to_i }
-  end
+  #rule float
+  #  (digits '.' digits space*)
+  #end
 
-  rule digits
-    [0-9]+ ('_' [0-9]+)* # Numbers may contain underscores.
-  end
+  #rule integer
+  #  (digits space*)
+  #end
+
+  #rule digits
+  #  [0-9]+ ('_' [0-9]+)*
+  #end
 
   rule select
     "select" space
@@ -100,8 +99,13 @@ grammar OHEY
     "from" space
   end
 
+  rule star
+    "*" space
+  end
+
   rule space
     [ \t\r\n]*
   end
 
 end
+
