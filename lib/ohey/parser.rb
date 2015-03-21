@@ -20,17 +20,22 @@ class OheyQuery
   end
 end
 
-class QueryPath
+
+
+
+class QuerySource
   attr_accessor :qpath
   attr_accessor :segments
+  attr_accessor :results
 
   def initialize(p)
     @qpath = p.strip
     @segments = @qpath.split(".")
+    @results = []
   end
 
-  def search_from_root(json)
-    search(json, @segments)
+  def resolve_path(json)
+    resolve(json, @segments)
   end
 
 
@@ -40,80 +45,64 @@ class QueryPath
 #3) Extract fields
 
 
-# general algorithm
-# 1) iterate over each segment
-# 2) if the segment exists and is scalar, continue
-# 3) if the segment exists and is an object, iterate
-#    over each value in the current object
-#    recurse
-# 4) if the segment exists and is an array, iterate
-#    over each value in the array
-#    recurse
-
 # $key is in kernel.modules
 # select $key, $object.size from kernel.modules
 
-
-  def search(json, segments)
-    results = []
+  # returns a flattened list of all paths reachable by this
+  # query
+  def resolve(json, segments)
     node = json
     segments.each_with_index do |segment, index|
-      puts "Segment #{index}:#{segment}"
-      if node.has_key?(segment)
-        node = node[segment]
-      end
-      if index = (segments.length - 1)
-        results << node
+      if node.is_a? Hash
+        if node.has_key?(segment)
+          node = node[segment]
+        end
+
+        case segment
+        when '$key'
+          node.each do |child|
+            node = child[0]
+            resolve(node, segments.drop(index))
+          end
+        when '$object'
+          node.each do |child|
+            node = child[1]
+            resolve(node, segments.drop(index))
+          end
+        end
+
+      elsif node.is_a? Array
+        #puts "Array segments = #{segments}"
+        #puts "X: Array"
+        #if node.has_key?(segment)
+        #  node = node[segment]
+        #end
+
+        #case segment
+        #when '$key'
+        #  node.each do |child|
+        #    node = child[0]
+        #    resolve(node, segments.drop(index))
+        #  end
+        #when '$object'
+        #  node.each do |child|
+        #    node = child[1]
+        #    resolve(node, segments.drop(index))
+        #  end
+        #end
+        raise "Array unimpl"
+      else
+        node
       end
     end
-    results
+    @results << node
+    @results
   end
-#  def search(json, segments)
-#    results = []
-#    node = json
-#    segments.each_with_index do |segment, index|
-#      puts "Segment #{index}:#{segment}"
-#      if node.has_key?(segment)
-#        node = node[segment]
-#      else
-#        if segment[0] == '$'
-#          case segment
-#          when "$key"
-#            return node.keys
-#          when "$object"
-#            if node is_a? Hash
-#              node.each do |v|
-#                search(node, segments.drop(index))
-#              end
-#            elsif node is_a? Array
-#              raise "Unimplemented!"
-#            else
-#              # keep iterating
-#              node
-#            end
-#          else
-#            raise "Unknown reserved word #{segment}"
-#          end
-#        else
-#          # don't return false, that might be a valid answer
-#          return nil
-#        end
-#      end
-#    end
-#    return node
-#  end
 
   def to_s
     @qpath
   end
 end
-
-#module StarField
-#  def value
-#    puts "STARFIELD"
-#    "SOMESTARFIELD"
-#  end
-#end
 
 module FieldListWithStar
   def value
@@ -123,26 +112,7 @@ module FieldListWithStar
   end
 end
 
-#module Field
-#  def value
-#    puts "FIELD"
-#    "FIELD"
-#  end
-#end
 
-#module Id
-#  def value
-#    puts "ID"
-#    capture(:id).value.to_str.strip
-#  end
-#end
-
-
-module Ref
-  def value
-    puts "REF"
-  end
-end
 
 module Query
   @@json = nil
@@ -159,20 +129,27 @@ module Query
     results = []
     source = capture(:source)[0]
     fields = capture(:fields).value
-    puts "SOURCE = #{source}"
-    sourcePath = JsonPath.new("$.#{source}")
-    dataToFilter = sourcePath.on(@@json)
-    #puts dataToFilter
+    source_path = source.value
+    #puts "SOURCE = #{source_path}"
+    qs = QuerySource.new(source_path)
+    data_to_filter = qs.resolve_path(@@json)
+
     # apply where clauses
-    filteredData = dataToFilter
-    # return results
+    filtered_data = data_to_filter
+
     results = []
-    fields.each do |f|
-      relativeField = "$.[*].#{f}"
-      rp = JsonPath.new(relativeField)
-      results << rp.on(filteredData)
+    filtered_data.each do |r|
+      # return results
+      fields.each do |f|
+        #puts "Query #{f}"
+        field_source = QuerySource.new(f)
+        results << field_source.resolve_path(r)
+      end
     end
-    return results.flatten
+    puts results
+    #puts results.transpose
+
+    return []
   end
 end
 

@@ -30,18 +30,19 @@ class OheyTest < Minitest::Test
   def test_eval_simple
     json = load_test_json()
     Query::json = json
-    o = O.parse("select name, release, os from kernel")
-    assert_equal ["Linux", "3.11.0-15-generic","GNU/Linux"], o.value
+    #o = O.parse("select name, release, os from kernel")
+    #assert_equal ["Linux", "3.11.0-15-generic","GNU/Linux"], o.value
 
-    o = O.parse("select systems.vbox from virtualization")
-    assert_equal ["guest"], o.value
+    #o = O.parse("select systems.vbox from virtualization")
+    #assert_equal ["guest"], o.value
 
-    o = O.parse("select total, free, mapped from memory")
-    assert_equal ["372020kB", "46580kB", "10032kB"], o.value
+    #o = O.parse("select total, free, mapped from memory")
+    #assert_equal ["372020kB", "46580kB", "10032kB"], o.value
 
-
-    o = O.parse("select $key, $object.size from kernel.modules")
+    o = O.parse("select $key from kernel.modules")
     puts ">>>> #{o.value}"
+
+    #o = O.parse("select $key, $object.size from kernel.modules")
   end
 
   def test_eval_object
