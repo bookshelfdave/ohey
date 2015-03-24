@@ -9,6 +9,12 @@ file = open(ARGV[0])
 json = file.read
 parsed = JSON.parse(json)
 
+Query::json = parsed
 while line = Readline.readline('> ', true)
-  puts line
+  o = O.parse(line)
+  if o.value.length == 1
+    puts "#{o.value.flatten}"
+  else
+    puts "#{o.value}"
+  end
 end
