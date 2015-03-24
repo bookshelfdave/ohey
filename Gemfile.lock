@@ -1,0 +1,16 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    citrus (3.0.2)
+    jsonpath (0.5.6)
+      multi_json
+    minitest (5.5.1)
+    multi_json (1.11.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  citrus
+  jsonpath
+  minitest

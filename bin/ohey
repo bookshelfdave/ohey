@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+#
+require 'readline'
+require 'json'
+require 'ohey'
+puts "Oh, hey!"
+
+file = open(ARGV[0])
+json = file.read
+parsed = JSON.parse(json)
+
+Query::json = parsed
+while line = Readline.readline('> ', true)
+  o = O.parse(line)
+  v = o.value
+  if v.length == 1
+    puts "#{v.flatten}"
+  else
+    puts "#{v}"
+  end
+end
