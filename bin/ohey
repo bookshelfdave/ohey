@@ -12,9 +12,10 @@ parsed = JSON.parse(json)
 Query::json = parsed
 while line = Readline.readline('> ', true)
   o = O.parse(line)
-  if o.value.length == 1
-    puts "#{o.value.flatten}"
+  v = o.value
+  if v.length == 1
+    puts "#{v.flatten}"
   else
-    puts "#{o.value}"
+    puts "#{v}"
   end
 end
