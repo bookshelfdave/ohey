@@ -53,25 +53,36 @@ class QuerySource
   def resolve(json, segments)
     node = json
     segments.each_with_index do |segment, index|
+      #puts "Segment #{segment}, #{index}, #{segments.length - 1}"
+
       if node.is_a? Hash
         if node.has_key?(segment)
           node = node[segment]
+        else
+          case segment
+            when '$key'
+              node.each do |child|
+                node = child[0]
+                resolve(node, segments.drop(index))
+              end
+              return
+            when '$object'
+              node.each do |child|
+                #puts "Resolve #{child[1]} #{segments.drop(index + 1)}"
+                resolve(child[1], segments.drop(index + 1))
+              end
+              return
+          end
         end
 
-        case segment
-        when '$key'
-          node.each do |child|
-            node = child[0]
-            resolve(node, segments.drop(index))
-          end
-        when '$object'
-          node.each do |child|
-            node = child[1]
-            resolve(node, segments.drop(index))
-          end
+        if index == (segments.length - 1)
+          @results << node
+          return
         end
 
       elsif node.is_a? Array
+        puts " - Array"
+        puts node
         #puts "Array segments = #{segments}"
         #puts "X: Array"
         #if node.has_key?(segment)
@@ -92,11 +103,10 @@ class QuerySource
         #end
         raise "Array unimpl"
       else
-        node
+        #puts "x"
+        @results << node
       end
     end
-    @results << node
-    @results
   end
 
   def to_s
@@ -132,7 +142,8 @@ module Query
     source_path = source.value
     #puts "SOURCE = #{source_path}"
     qs = QuerySource.new(source_path)
-    data_to_filter = qs.resolve_path(@@json)
+    qs.resolve_path(@@json)
+    data_to_filter = qs.results
 
     # apply where clauses
     filtered_data = data_to_filter
@@ -143,13 +154,11 @@ module Query
       fields.each do |f|
         #puts "Query #{f}"
         field_source = QuerySource.new(f)
-        results << field_source.resolve_path(r)
+        field_source.resolve_path(r)
+        results << field_source.results
       end
     end
-    puts results
-    #puts results.transpose
-
-    return []
+    return results.transpose
   end
 end
 
