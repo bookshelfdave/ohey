@@ -6,16 +6,15 @@ require 'ohey'
 puts "Oh, hey!"
 
 file = open(ARGV[0])
-json = file.read
-parsed = JSON.parse(json)
+data = file.read
+json = JSON.parse(data)
 
-Query::json = parsed
+ohey = OHey.new()
 while line = Readline.readline('> ', true)
-  o = O.parse(line)
-  v = o.value
-  if v.length == 1
-    puts "#{v.flatten}"
+  result = ohey.run(line, json)
+  if result.length == 1
+    pp result.flatten
   else
-    puts "#{v}"
+    pp result
   end
 end
