@@ -5,29 +5,55 @@ require 'json'
 
 class OheyTest < Minitest::Test
 
-  def parse(query)
-    json = load_test_json
-    parser = OHey.new()
-    parser.run(query, json)
-  end
-  def test_parse
-    assert parse("select real, total, vendor_id from cpu")
-    assert parse("select real, total, vendor_id from cpu where total = 8")
-    assert parse("select $key from kernel.modules")
-    assert parse('select true from cpu where "fpu" = flags')
-    assert parse('select foo.bar.baz from cpu where "fpu" = flags')
-    #assert parse('select * from filesystem where $child.blocksize != 512')
-    assert parse('select $key from filesystem where $object.blocksize != 512')
-    assert parse('select $key, $object.fs_type from filesystem where $object.fs_type != "hfs"')
-    #assert parse('select * from network.interfaces where $key = "gif0"')
-    #assert parse('select $key, $object.addresses from network.interfaces where "127.0.0.1" in $object.addresses')
-  end
-
   def load_test_json
     file = open("./test/data.json")
     json = file.read
     JSON.parse(json)
   end
+
+  def parse(query)
+    json = load_test_json
+    parser = OHey.new()
+    parser.run(query, json)
+  end
+
+  def query(q)
+    json = load_test_json
+    q = QuerySource.new(q)
+    q.resolve_path(json)
+    q.results
+  end
+
+  def test_paths
+    assert_equal ["Linux"], query("kernel.name")
+    assert_equal 24, query("kernel.modules")[0].count
+
+    modkeys = query("kernel.modules.$key")
+    assert_equal 24, modkeys.length
+    assert modkeys.include?("psmouse")
+
+    #allmods = query("kernel.modules.$object")
+    #empty set, no child segment
+
+    allmodrefcounts = query("kernel.modules.$object.refcount")
+    assert_equal 24, allmodrefcounts.length
+    assert_equal 22, allmodrefcounts.map { |x| x.to_i }.reduce(:+)
+
+  end
+
+  def test_parse
+    #assert parse("select real, total, vendor_id from cpu")
+    #assert parse("select real, total, vendor_id from cpu where total = 8")
+    #assert parse("select $key from kernel.modules")
+    #assert parse('select true from cpu where "fpu" = flags')
+    #assert parse('select foo.bar.baz from cpu where "fpu" = flags')
+    #assert parse('select * from filesystem where $child.blocksize != 512')
+    #assert parse('select $key from filesystem where $object.blocksize != 512')
+    #assert parse('select $key, $object.fs_type from filesystem where $object.fs_type != "hfs"')
+    #assert parse('select * from network.interfaces where $key = "gif0"')
+    #assert parse('select $key, $object.addresses from network.interfaces where "127.0.0.1" in $object.addresses')
+  end
+
 
   def test_eval_simple
     json = load_test_json()
