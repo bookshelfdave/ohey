@@ -3,7 +3,7 @@ class QuerySource
   attr_accessor :segments
   attr_accessor :results
 
-  @@keyword= %w($key $object)
+  @@keyword= %w($key $object $size)
 
   def initialize(p)
     @qpath = p.strip
@@ -69,6 +69,8 @@ class QuerySource
                 end
               end
               return
+            when '$size'
+              @results << node.size
           end
           return
         else
