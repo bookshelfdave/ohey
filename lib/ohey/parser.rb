@@ -1,4 +1,5 @@
 require 'parslet'
+require 'pp'
 
 
 class OHeyParser < Parslet::Parser
@@ -71,8 +72,10 @@ class Pred
 end
 
 class OHeyTrans < Parslet::Transform
+    rule(:reserved=> simple(:v)) { "$#{v}" }
     rule(:f => simple(:v)) { [v] }
     rule(:f => sequence(:v)) { v }
+    #rule(:f => {:reserved => simple(:v)}) { ["$#{v}"] }
     rule(:ref => simple(:v)) { v.to_str }
     rule(:string => simple(:v)) { v.to_str }
     rule(:number => simple(:v)) { v }
@@ -88,7 +91,7 @@ class OHey
   end
 
   def apply_preds(data, preds)
-    puts "Applying preds"
+    #puts "Applying preds"
     #preds.each do |p|
     #  qs = new QuerySource(p.a)
     #  qs.resolve_path(data)
@@ -129,7 +132,7 @@ class OHey
     filtered_data.each do |r|
       # return results
       fields.each do |f|
-        puts "Query #{f}"
+        #puts "Query #{f}"
         field_source = QuerySource.new(f)
         field_source.resolve_path(r)
         results << field_source.results
