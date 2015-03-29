@@ -62,7 +62,7 @@ end
 
 class Pred
   attr_accessor :a
-  attr_accessor :a
+  attr_accessor :b
   attr_accessor :op
   def initialize(a, b, op)
     @a = a
@@ -95,18 +95,25 @@ class OHey
   end
 
   def apply_preds(data, preds)
+    if preds == [nil]
+      # TODO: parser bug
+      return data
+    end
+    filtered_results = []
     data.each do |d|
-      preds.each do |p|
-        if p.nil?
-          # TODO: bug in the parser
-            next
+      d.each do |x|
+        ## TODO: and/or/group predicates
+        preds.map do |p|
+          #puts "Predicate: #{p}"
+          qs = QuerySource.new(p.a)
+          qs.resolve_pred_path(x, p)
+          if qs.results.flatten == [true]
+            filtered_results << x
+          end
         end
-        puts "Predicate: #{p}"
-        qs = QuerySource.new(p.a)
-        qs.resolve_pred_path(d, p)
       end
     end
-    return data
+    filtered_results
   end
 
   def run(q, json)
@@ -134,9 +141,11 @@ class OHey
     # apply where clauses
     if preds.is_a? Array
       filtered_data = data_to_filter
+      raise "Multiple preds not implemented"
     else
       filtered_data = apply_preds(data_to_filter, [preds])
     end
+    #puts "Filtered data = #{filtered_data}"
 
     results = []
     filtered_data.each do |r|
@@ -148,7 +157,11 @@ class OHey
         results << field_source.results
       end
     end
-    return results.transpose
+    if results.length > 1
+      return results.transpose
+    else
+      return results
+    end
 
   end
 end

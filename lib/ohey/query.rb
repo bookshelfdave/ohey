@@ -14,7 +14,7 @@ class QuerySource
   end
 
   def resolve_path(json)
-    resolve(json, @segments)
+    resolve(json, @segments, nil)
   end
 
   def resolve_pred_path(json, pred)
@@ -33,16 +33,26 @@ class QuerySource
     if pred.nil?
       @results << value
     else
-      puts "EVAL #{pred}"
-      @results << value
+      case pred.op
+      when "="
+        op = "=="
+      else
+        op = pred.op
+      end
+
+      toeval = "#{value} #{op} #{pred.b}"
+      if eval(toeval) == true
+        @results << true
+      else
+        @results << false
+      end
     end
   end
 
   # When does it finish?
   #   a) when all segments have been exhausted
   #   b) when the next segment can't be found
-  def resolve(json, segments, pred=nil)
-
+  def resolve(json, segments, pred)
     if segments == []
       return
     end
@@ -68,7 +78,7 @@ class QuerySource
               node.each do |child|
                 node = child[0]
                 if is_container?(node)
-                  resolve(node, segments.drop(index))
+                  resolve(node, segments.drop(index), pred)
                 else
                   eval_if_pred(node, pred)
                   #@results << node
@@ -80,7 +90,7 @@ class QuerySource
                 if is_container?(node)
                   #puts "Resolve #{child[1]} #{segments.drop(index + 1)}"
                   #puts ">>> #{segments.drop(index+1)}"
-                  resolve(child[1], segments.drop(index + 1))
+                  resolve(child[1], segments.drop(index + 1), pred)
                 else
                   #@results << node
                   eval_if_pred(node, pred)
@@ -94,15 +104,23 @@ class QuerySource
           end
           return
         else
-          # segment not found
-          puts "Segment(s) not found: #{@segments}"
+          # TODO: segment not found
+          #puts "Segment(s) not found: #{@segments}"
+          # return nil so Array.transpose works
           eval_if_pred(nil, pred)
         end
 
 
       elsif node.is_a? Array
-        puts node
-        raise "Array unimpl"
+        if node[0] == segment
+          node = node[1]
+        elsif segment == '$object'
+          node = node[1]
+        elsif segment == '$key'
+          @results << node[0]
+        else
+          # nop
+        end
       else
         puts "NOT AN ARRAY OR HASH"
       end
