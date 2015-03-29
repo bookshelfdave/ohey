@@ -56,18 +56,17 @@ class OheyTest < Minitest::Test
 
 
   def test_eval_simple
+    o = parse("select foo, release, os from kernel")
+    assert_equal [nil, "3.11.0-15-generic","GNU/Linux"], o.flatten
 
-     o = parse("select foo, release, os from kernel")
-     assert_equal [nil, "3.11.0-15-generic","GNU/Linux"], o.flatten
+    o = parse("select name, release, os from kernel")
+    assert_equal ["Linux", "3.11.0-15-generic","GNU/Linux"], o.flatten
 
-     o = parse("select name, release, os from kernel")
-     assert_equal ["Linux", "3.11.0-15-generic","GNU/Linux"], o.flatten
+    o = parse("select systems.vbox from virtualization")
+    assert_equal ["guest"], o.flatten
 
-     o = parse("select systems.vbox from virtualization")
-     assert_equal ["guest"], o.flatten
-
-     o = parse("select total, free, mapped from memory")
-     assert_equal ["372020kB", "46580kB", "10032kB"], o.flatten
+    o = parse("select total, free, mapped from memory")
+    assert_equal ["372020kB", "46580kB", "10032kB"], o.flatten
 
     o = parse("select $key from kernel.modules")
     assert_equal ["vboxsf", "dm_crypt", "ppdev", "parport_pc", "psmouse",
@@ -79,11 +78,11 @@ class OheyTest < Minitest::Test
 
 
     o = parse("select $object.size from kernel.modules")
-   assert_equal ["43820", "23111", "17711", "32866", "104093", "13253",
-                 "296365", "13413", "12883", "12658", "59609", "187669",
-                 "63355", "95174", "306660", "22299", "278837", "73909",
-                 "244206", "17799", "42466", "13876", "19574", "152205"], o.flatten
-   assert_equal 24, o.flatten.length
+    assert_equal ["43820", "23111", "17711", "32866", "104093", "13253",
+                  "296365", "13413", "12883", "12658", "59609", "187669",
+                  "63355", "95174", "306660", "22299", "278837", "73909",
+                  "244206", "17799", "42466", "13876", "19574", "152205"], o.flatten
+    assert_equal 24, o.flatten.length
 
 
     o = parse("select $key, $object.size from kernel.modules")
@@ -103,6 +102,12 @@ class OheyTest < Minitest::Test
     assert_equal 24, o[0][0]
 
   end
+
+ def test_where_clause
+    o = parse("select $key, $object.refcount from kernel.modules where $object.refcount = 6")
+    puts "#{o}"
+ end
+
 
 
     #                addresses is yet another hash... get the family key

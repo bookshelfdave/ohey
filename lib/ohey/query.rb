@@ -2,6 +2,7 @@ class QuerySource
   attr_accessor :qpath
   attr_accessor :segments
   attr_accessor :results
+  attr_accessor :debug
 
   @@keyword= %w($key $object $size)
 
@@ -9,10 +10,15 @@ class QuerySource
     @qpath = p.strip
     @segments = @qpath.split(".")
     @results = []
+    @debug = false
   end
 
   def resolve_path(json)
     resolve(json, @segments)
+  end
+
+  def resolve_pred_path(json, pred)
+    resolve(json, @segments, pred)
   end
 
   def is_keyword?(segment)
@@ -21,6 +27,15 @@ class QuerySource
 
   def is_container?(node)
     node.is_a? Hash or node.is_a? Array
+  end
+
+  def eval_if_pred(value, pred)
+    if pred.nil?
+      @results << value
+    else
+      puts "EVAL #{pred}"
+      @results << value
+    end
   end
 
   # When does it finish?
@@ -42,7 +57,8 @@ class QuerySource
           # segment found, push
           node = node[segment]
           if index == last_segment
-            @results << node
+            #@results << node
+            eval_if_pred(node, pred)
             return
           end
         elsif is_keyword?(segment)
@@ -54,7 +70,8 @@ class QuerySource
                 if is_container?(node)
                   resolve(node, segments.drop(index))
                 else
-                  @results << node
+                  eval_if_pred(node, pred)
+                  #@results << node
                 end
               end
               return
@@ -65,18 +82,21 @@ class QuerySource
                   #puts ">>> #{segments.drop(index+1)}"
                   resolve(child[1], segments.drop(index + 1))
                 else
-                  @results << node
+                  #@results << node
+                  eval_if_pred(node, pred)
                 end
               end
               return
             when '$size'
               @results << node.size
+              # TODO
+              #eval_if_pred(node, pred)
           end
           return
         else
           # segment not found
           puts "Segment(s) not found: #{@segments}"
-          @results << nil
+          eval_if_pred(nil, pred)
         end
 
 
@@ -89,49 +109,6 @@ class QuerySource
     end
   end
 
-
-
-#  def search(json)
-#      search_segments(json, @segments)
-#  end
-#
-#  def search_segments(json, segments)
-#    index = 0
-#    searching = true
-#    node = json
-#    while searching
-#      segment = segments[index]
-#      if index == segments.length
-#        # exit the search loop
-#        searching = false
-#        next
-#      end
-#
-#      if node.is_a? Hash
-#        if node.has_key?(segment)
-#          node = node[segment]
-#          index += 1
-#          next
-#        elsif is_reserved(segment)
-#
-#           #when '$key'
-#           #   node.each do |child|
-#           #     node = child[0]
-#           #     resolve(node, segments.drop(index))
-#        else
-#          # not found
-#          searching = false
-#          node = nil
-#          next
-#        end
-#      elsif node.is_a? Array
-#        puts "Array unimplemented"
-#      else
-#        puts "Some other type!"
-#      end
-#    end # while searching
-#    node
-#  end
 
   def to_s
     @qpath

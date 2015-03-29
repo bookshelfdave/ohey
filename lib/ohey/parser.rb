@@ -69,6 +69,10 @@ class Pred
     @b = b
     @op = op
   end
+
+  def to_s
+      "#{@a} #{@op} #{@b}"
+  end
 end
 
 class OHeyTrans < Parslet::Transform
@@ -91,11 +95,17 @@ class OHey
   end
 
   def apply_preds(data, preds)
-    #puts "Applying preds"
-    #preds.each do |p|
-    #  qs = new QuerySource(p.a)
-    #  qs.resolve_path(data)
-    #end
+    data.each do |d|
+      preds.each do |p|
+        if p.nil?
+          # TODO: bug in the parser
+            next
+        end
+        puts "Predicate: #{p}"
+        qs = QuerySource.new(p.a)
+        qs.resolve_pred_path(d, p)
+      end
+    end
     return data
   end
 
