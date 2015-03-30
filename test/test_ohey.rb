@@ -55,7 +55,7 @@ class OheyTest < Minitest::Test
   end
 
 
-  def dont_test_eval_simple
+  def test_eval_simple
     o = parse("select foo, release, os from kernel")
     assert_equal [nil, "3.11.0-15-generic","GNU/Linux"], o.flatten
 
@@ -73,7 +73,7 @@ class OheyTest < Minitest::Test
                   "mac_hid", "nfsd", "serio_raw", "nfs_acl", "vboxvideo",
                   "auth_rpcgss", "nfs", "fscache", "lockd", "drm", "i2c_piix4",
                   "sunrpc", "ext2", "vboxguest", "lp", "parport", "vesafb",
-                  "video", "e1000"], o.flatten
+                  "video", "e1000"], o
     assert_equal 24, o.length
 
 

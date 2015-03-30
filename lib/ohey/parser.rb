@@ -145,18 +145,20 @@ class OHey
     else
       filtered_data = apply_preds(data_to_filter, [preds])
     end
-    #puts "Filtered data = #{filtered_data}"
 
     results = []
     filtered_data.each do |r|
       # return results
+      row = []
       fields.each do |f|
         #puts "Query #{f}"
         field_source = QuerySource.new(f)
         field_source.resolve_path(r)
-        results << field_source.results
+        row << field_source.results
       end
+      results << row
     end
+
     if results.length > 1
       return results.transpose
     else
