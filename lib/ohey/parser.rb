@@ -1,5 +1,6 @@
 require 'parslet'
 require 'pp'
+require 'jsonpath'
 
 
 class OHeyParser < Parslet::Parser
@@ -117,10 +118,8 @@ class OHey
   end
 
   def run(q, json)
-    #puts "Raw:"
     result =  parser.parse(q)
     #pp result
-    #puts "---- transformed"
     trans = OHeyTrans.new
     result = trans.apply(result)
     #pp result
@@ -129,41 +128,58 @@ class OHey
     source = result[:source]
     preds = result[:preds]
 
+
+    sourcePath = JsonPath.new("$.#{source}")
+    results = sourcePath.on(json)
+    puts "RESULT CLASS = #{results.class}"
     #puts "Fields #{fields}"
     #puts "Source #{source}"
     #puts "Preds #{preds}"
 
-    results = []
-    qs = QuerySource.new(source)
-    qs.resolve_path(json)
-    data_to_filter = qs.results
-
+#    puts "RAW RESULTS = #{results}"
     # apply where clauses
-    if preds.is_a? Array
-      filtered_data = data_to_filter
-      raise "Multiple preds not implemented"
-    else
-      filtered_data = apply_preds(data_to_filter, [preds])
-    end
+#    if preds.is_a? Array
+#      filtered_data = data_to_filter
+#      raise "Multiple preds not implemented"
+#    else
+#      filtered_data = apply_preds(data_to_filter, [preds])
+#    end
 
-    results = []
-    filtered_data.each do |r|
-      # return results
-      row = []
-      fields.each do |f|
-        #puts "Query #{f}"
-        field_source = QuerySource.new(f)
-        field_source.resolve_path(r)
-        row << field_source.results
+    filtered_data = results
+    agg = []
+    if results.is_a? Hash
+      results.each do |k, v|
+        # wait, wat
+        all = {k => v}
+        puts "----"
+        puts "#{all}"
+        puts "----"
+        row = {}
+        fields.each do |f|
+          #puts "Query #{f}"
+          field_source = QuerySource.new(f)
+          field_source.resolve_path(all)
+          # cheat, results in this case *should* be scalar
+          # but wtf knows!!
+          # https://s.mlkshk.com/r/97VP
+          row[f] = field_source.results[0]
+        end
+        agg << row
       end
-      results << row
+    elsif results.is_a? Array
+      filtered_data.each do |r|
+        row = {}
+        fields.each do |f|
+          #puts "Query #{f}"
+          field_source = QuerySource.new(f)
+          field_source.resolve_path(r)
+          row[f] = field_source.results[0]
+        end
+        agg << row
+      end
     end
 
-    if results.length > 1
-      return results.transpose
-    else
-      return results
-    end
+    return agg
 
   end
 end
