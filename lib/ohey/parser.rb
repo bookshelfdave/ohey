@@ -130,8 +130,15 @@ class OHey
 
 
     sourcePath = JsonPath.new("$.#{source}")
-    results = sourcePath.on(json)
-    puts "RESULT CLASS = #{results.class}"
+    if fields.include?("$object") or fields.include?("$key")
+      # looking at subobjects
+      results = sourcePath.on(json)[0]
+    else
+      results = sourcePath.on(json)
+    end
+
+
+
     #puts "Fields #{fields}"
     #puts "Source #{source}"
     #puts "Preds #{preds}"
@@ -151,9 +158,6 @@ class OHey
       results.each do |k, v|
         # wait, wat
         all = {k => v}
-        puts "----"
-        puts "#{all}"
-        puts "----"
         row = {}
         fields.each do |f|
           #puts "Query #{f}"
