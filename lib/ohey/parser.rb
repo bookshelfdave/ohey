@@ -101,17 +101,13 @@ class OHey
       return data
     end
     filtered_results = []
-    data.each do |d|
-      d.each do |x|
-        ## TODO: and/or/group predicates
-        preds.map do |p|
-          #puts "Predicate: #{p}"
-          qs = QuerySource.new(p.a)
-          qs.resolve_pred_path(x, p)
-          if qs.results.flatten == [true]
-            filtered_results << x
-          end
-        end
+    preds.map do |p|
+      #puts "Predicate: #{p} => #{data}"
+      qs = QuerySource.new(p.a)
+      qs.resolve_pred_path(data, p)
+      #puts "XXX #{qs.results.flatten}"
+      if qs.results.flatten == [true]
+        filtered_results << true
       end
     end
     filtered_results
@@ -137,27 +133,37 @@ class OHey
       results = sourcePath.on(json)
     end
 
-
-
     #puts "Fields #{fields}"
     #puts "Source #{source}"
     #puts "Preds #{preds}"
 
-#    puts "RAW RESULTS = #{results}"
+#   puts "RAW RESULTS = #{results}"
     # apply where clauses
-#    if preds.is_a? Array
-#      filtered_data = data_to_filter
-#      raise "Multiple preds not implemented"
-#    else
-#      filtered_data = apply_preds(data_to_filter, [preds])
-#    end
+    #if preds.is_a? Array
+    ##  results = data_to_filter
+    #  raise "Multiple preds not implemented"
+    #else
+    #  results = apply_preds(results, [preds])
+    #end
 
-    filtered_data = results
+    #filtered_data = results
     agg = []
+
+
     if results.is_a? Hash
       results.each do |k, v|
+
         # wait, wat
         all = {k => v}
+        # check preds
+        if not preds.nil?
+          predresults = apply_preds(all, [preds])
+          #puts "XPREDRESULTS = #{predresults}"
+          if predresults != [true]
+            results.delete(k)
+            next
+          end
+        end
         row = {}
         fields.each do |f|
           #puts "Query #{f}"
@@ -171,7 +177,11 @@ class OHey
         agg << row
       end
     elsif results.is_a? Array
-      filtered_data.each do |r|
+      results.each do |r|
+
+        predresults = apply_preds(r, [preds])
+        #puts "PREDRESULTS = #{predresults}"
+
         row = {}
         fields.each do |f|
           #puts "Query #{f}"

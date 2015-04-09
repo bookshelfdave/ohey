@@ -40,7 +40,8 @@ class QuerySource
         op = pred.op
       end
 
-      toeval = "#{value} #{op} #{pred.b}"
+      toeval = "'#{value.to_s}' #{op} '#{pred.b.to_s}'"
+      #puts "TOEVAL = #{toeval}"
       if eval(toeval) == true
         @results << true
       else
@@ -49,9 +50,6 @@ class QuerySource
     end
   end
 
-  # When does it finish?
-  #   a) when all segments have been exhausted
-  #   b) when the next segment can't be found
   def resolve(json, segments, pred)
     if segments == []
       return
@@ -67,7 +65,6 @@ class QuerySource
           # segment found, push
           node = node[segment]
           if index == last_segment
-            #@results << node
             eval_if_pred(node, pred)
             return
           end
@@ -81,7 +78,6 @@ class QuerySource
                   resolve(node, segments.drop(index), pred)
                 else
                   eval_if_pred(node, pred)
-                  #@results << node
                 end
               end
               return
@@ -92,7 +88,6 @@ class QuerySource
                   #puts ">>> #{segments.drop(index+1)}"
                   resolve(child[1], segments.drop(index + 1), pred)
                 else
-                  #@results << node
                   eval_if_pred(node, pred)
                 end
               end

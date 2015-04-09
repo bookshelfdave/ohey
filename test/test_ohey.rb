@@ -56,8 +56,18 @@ class OheyTest < Minitest::Test
 
 
   def test_eval_simple
-    o = parse("select foo, release, os from kernel")
+    #o = parse("select foo, release, os from kernel")
+    #puts o
+
+
+    puts "-------"
+    o = parse('select foo, release, os from kernel where os = "foo"')
     puts o
+
+    puts "-------"
+    o = parse('select foo, release, os from kernel where os = "GNU/Linux"')
+    puts o
+    puts "-------"
     #assert_equal [{"foo"=>nil, "release"=>"3.11.0-15-generic","os"=>"GNU/Linux"}], o
 #
 #    o = parse("select name, release, os from kernel")
@@ -88,8 +98,8 @@ class OheyTest < Minitest::Test
 #
 #
     #puts "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-    o = parse("select $key, $object.size from kernel.modules")
-    puts o
+#    o = parse("select $key, $object.size from kernel.modules")
+#    puts o
 #    assert_equal [["vboxsf", "43820"], ["dm_crypt", "23111"], ["ppdev", "17711"],
 #                  ["parport_pc", "32866"], ["psmouse", "104093"], ["mac_hid", "13253"],
 #                  ["nfsd", "296365"], ["serio_raw", "13413"], ["nfs_acl", "12883"],
